@@ -909,7 +909,7 @@ bool xp_array_gas(FILE *fp, const char *symname,
 	if(fp == NULL || symname == NULL || data == NULL)
 		return false;
 
-	fputs("\t.section .rodata\n\t.align\t2\n", fp);
+	fputs("\t.section .rodata\n\t.align\t4\n", fp);
 	// NOTE: no EOL break
 	fprintf(fp, "\t.global %s\t\t@ %d bytes\n%s:",
 		symname, ALIGN4(len), symname);
@@ -1000,7 +1000,7 @@ int main(int argc, char** argv)
     }
     std::string name(argv[1]);
 
-    std::ifstream music(name + ".raw", std::ios::binary);
+    std::ifstream music("sounds/" + name + ".raw", std::ios::binary);
 
     char c;
     std::vector<uint8_t> bytes;
@@ -1009,12 +1009,21 @@ int main(int argc, char** argv)
         bytes.push_back(c);
     }
 
-    auto out = "source/platform/" + name + ".s";
+    auto fname_template = "source/data/" + name;
+    auto out = fname_template + ".s";
     auto fout = fopen(out.c_str(), "w");
 
     xp_array_gas(fout, name.c_str(), bytes.data(), bytes.size(), 1);
 
     fclose(fout);
+
+    std::ofstream header(fname_template + ".hpp");
+
+    auto len_var_name = name + "Len";
+
+    header << "#pragma once" << std::endl;
+    header << "constexpr int " << len_var_name << " = " << bytes.size() << ';' << std::endl;
+    header << "extern const unsigned char " << name << '[' << len_var_name << "];" << std::endl;
 
     return 0;
 }
